@@ -1,9 +1,14 @@
+
 // TFTPServer.java 
 // This class is the server side of a simple TFTP server based on
 // UDP/IP. The server receives a read or write packet from a client and
 // sends back the appropriate response without any actual file transfer.
 // One socket (69) is used to receive (it stays open) and another for each response. 
-
+/**
+ * @author Ziad Skaik
+ * @date 2014-05-21
+ * @version 1.0
+ */
 import java.io.*;
 import java.net.*;
 import java.util.*;

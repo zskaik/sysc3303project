@@ -1,4 +1,4 @@
-// TFTPSim.java 
+// TFTPHost.java 
 // This class is the beginnings of an error simulator for a simple TFTP server 
 // based on UDP/IP. The simulator receives a read or write packet from a client and
 // passes it on to the server.  Upon receiving a response, it passes it on to the 
@@ -6,6 +6,11 @@
 // One socket (68) is used to receive from the client, and another to send/receive
 // from the server.  A new socket is used for each communication back to the client.   
 
+/**
+ * @author Ziad Skaik
+ * @date 2014-05-21
+ * @version 1.0
+ */
 import java.io.*;
 import java.net.*;
 import java.util.*;
