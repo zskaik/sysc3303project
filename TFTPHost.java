@@ -31,9 +31,7 @@ public class TFTPHost {
          se.printStackTrace();
          System.exit(1);
       }
-      
 
-      
       byte[] data, sending;
       
       int j=0;

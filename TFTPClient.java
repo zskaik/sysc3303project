@@ -354,10 +354,10 @@ private static String fname;
 	  {
 	   s = scan1.next();
 	   
-	   if(s.equals("R")||s.equals("W"))
+	   if(s.equalsIgnoreCase("R")||s.equalsIgnoreCase("W"))
 		   break;
 	  }
-	   
+	  
 	   do
 	   {
 		   
@@ -366,8 +366,6 @@ private static String fname;
 		   
 	   }while(!(fname.endsWith(".txt")));
 	  
-	
-    
       c.sendAndReceive(x); 
       x++;
 	   }//end for loop
