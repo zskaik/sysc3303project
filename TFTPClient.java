@@ -2,11 +2,19 @@
 // This class is the client side for a very simple assignment based on TFTP on
 // UDP/IP. The client uses one port and sends a read or write request and gets 
 // the appropriate response from the server.  No actual file transfer takes place.   
-
+/**
+ * @author Ziad Skaik
+ * @date 2014-05-21
+ * @version 1.0
+ */
 import java.io.*;
 import java.net.*;
 import java.util.*;
-
+/**
+ * @author Ziad Skaik
+ * @date 2014-05-21
+ * @version 1.0
+ */
 public class TFTPClient {
 
    private DatagramPacket sendPacket, receivePacket;
