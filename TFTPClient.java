@@ -68,9 +68,9 @@ private static String fname;
          // opcode for read is 01, and for write 02
 
         msg[0] = 0;
-        if(s=="R") 
+        if(s.equals("R")) 	
            msg[1]=1;
-        else if(s=="W") 
+        else if(s.equals("W")) 
            msg[1]=2;
            
        /* if(i==8) 
