@@ -41,7 +41,7 @@ private static String fname;
              data; // reply as array of bytes
       String filename, mode; // filename and mode as Strings
       int j, len, sendPort;
-      Mode run = Mode.TEST; // change to NORMAL to send directly to server
+      Mode run = Mode.NORMAL; // change to NORMAL to send directly to server
       
       if (run==Mode.NORMAL) 
          sendPort = 69;
@@ -264,16 +264,19 @@ private static String fname;
 			}
 			
 			
-      	byte[] myBuffer = new byte[(int) file.length()], bdata;
+      	byte[] myBuffer , bdata;
       	
       	try {
 				do
 				{
 					if(file.length()>=512)
+					{
+					myBuffer = new byte[512];
 					bytesRead  = reader.read(myBuffer,0,512);
-					
+					}
 					else
 					{
+						myBuffer = new byte[(int) file.length()];
 						bytesRead = reader.read(myBuffer,0,(int) file.length());
 					}
 					
@@ -288,7 +291,7 @@ private static String fname;
 			         System.out.println("Client: packet sent using port " + sendReceiveSocket.getLocalPort());
 			         System.out.println();
 			         
-			         receiveAck(this.receivePacket.getPort());
+			         receiveAck();
 			         
 				}while(bytesRead!=-1);//end while
 			} catch (IOException e) {
@@ -338,10 +341,10 @@ private static String fname;
 
 	           ackcount++;
    }
-   public void receiveAck( int receiveport)
+   public void receiveAck()
    {
 	  byte[] data = new byte[4];
-       receivePacket = new DatagramPacket(data, data.length);
+      DatagramPacket receivePacket = new DatagramPacket(data, data.length);
 
        System.out.println("Client: Waiting for packet.");
        try {
@@ -355,7 +358,7 @@ private static String fname;
        // Process the received datagram.
        System.out.println("Client: Ack # " + a + "received ");
        System.out.println("From host: " + receivePacket.getAddress());
-       System.out.println("Host port: " + receiveport);
+       System.out.println("Host port: " + receivePacket.getPort());
        System.out.println("Length: " + receivePacket.getLength());
        System.out.println("Containing: ");
 

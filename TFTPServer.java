@@ -374,17 +374,19 @@ public class TFTPServer  {
 				} catch (FileNotFoundException e1) {
 					e1.printStackTrace();
 				}
-	        	byte[] myBuffer = new byte[(int) file.length()], bdata;
+	        	byte[] myBuffer, bdata;
 	        	
 	        	try {
 					do 
 					{
 						
-						if(file.length()>=512)
+						if(file.length()>=512){
+						myBuffer = new byte[512];
 						bytesRead = reader.read(myBuffer,0,512);
-						
+						}
 						else
 						{
+							myBuffer = new byte[(int) file.length()];
 							bytesRead = reader.read(myBuffer,0,(int) file.length());
 						}
 					    this.sendPacket = new DatagramPacket(myBuffer,myBuffer.length,this.receivePacket.getAddress(),this.receivePacket.getPort());
@@ -408,7 +410,7 @@ public class TFTPServer  {
 				         System.out.println("To port " + this.receivePacket.getPort());
 				         
 				         
-				         receiveAck(this.receivePacket.getPort());
+				         receiveAck();
 				         
 					}while(bytesRead!=-1);//end while
 				} catch (IOException e) {
@@ -459,7 +461,7 @@ public class TFTPServer  {
 
            
    }
-   public void receiveAck( int receiveport)
+   public void receiveAck( )
    {
 	   byte[] data = new byte[4];
       DatagramPacket receivePacket = new DatagramPacket(data, data.length);
@@ -476,7 +478,7 @@ int a= data[3]&0xFF;
        // Process the received datagram.
        System.out.println("Server: ACK # " + a + "received ");
        System.out.println("From host: " + receivePacket.getAddress());
-       System.out.println("Host port: " + receiveport);
+       System.out.println("Host port: " + receivePacket.getPort());
        System.out.println("Length: " + receivePacket.getLength());
        System.out.println("Containing: ");
 
