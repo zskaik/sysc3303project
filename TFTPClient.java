@@ -2,19 +2,11 @@
 // This class is the client side for a very simple assignment based on TFTP on
 // UDP/IP. The client uses one port and sends a read or write request and gets 
 // the appropriate response from the server.  No actual file transfer takes place.   
-/**
- * @author Ziad Skaik
- * @date 2014-05-21
- * @version 1.0
- */
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
-/**
- * @author Ziad Skaik
- * @date 2014-05-21
- * @version 1.0
- */
+
 public class TFTPClient {
 
    private DatagramPacket sendPacket, receivePacket;
@@ -41,7 +33,7 @@ private static String fname;
       }
    }
 
-   public void sendAndReceive(int i)
+   public void sendAndReceive()
    {
       byte[] msg = new byte[100], // message we send
              fn, // filename as an array of bytes
@@ -54,12 +46,12 @@ private static String fname;
       if (run==Mode.NORMAL) 
          sendPort = 69;
       else
-         sendPort = 68;
+         sendPort = 5000;
       
       // sends 10 packets -- 4 reads, 5 writes, 1 invalid
      // for(int i=0; i<10; i++) {
 
-         System.out.println("Client: creating packet request number:  " + i + ".");
+         System.out.println("Client: creating packet request.");
          
          // Prepare a DatagramPacket and send it via sendReceiveSocket
          // to sendPort on the destination host (also on this machine).
@@ -68,9 +60,9 @@ private static String fname;
          // opcode for read is 01, and for write 02
 
         msg[0] = 0;
-        if(s.equals("R")) 	
+        if(s.equalsIgnoreCase("R")) 
            msg[1]=1;
-        else if(s.equals("W")) 
+        else if(s.equalsIgnoreCase("W")) 
            msg[1]=2;
            
        /* if(i==8) 
@@ -121,7 +113,7 @@ private static String fname;
            System.exit(1);
         }
 
-        System.out.println("Client: sending packet " + i + ".");
+        System.out.println("Client: sending packet ");
         System.out.println("To host: " + sendPacket.getAddress());
         System.out.println("Destination host port: " + sendPacket.getPort());
         System.out.println("Length: " + sendPacket.getLength());
@@ -145,31 +137,7 @@ private static String fname;
         // Construct a DatagramPacket for receiving packets up
         // to 100 bytes long (the length of the byte array).
 
-        data = new byte[100];
-        receivePacket = new DatagramPacket(data, data.length);
 
-        System.out.println("Client: Waiting for packet.");
-        try {
-           // Block until a datagram is received via sendReceiveSocket.
-           sendReceiveSocket.receive(receivePacket);
-        } catch(IOException e) {
-           e.printStackTrace();
-           System.exit(1);
-        }
-
-        // Process the received datagram.
-        System.out.println("Client: Packet received:");
-        System.out.println("From host: " + receivePacket.getAddress());
-        System.out.println("Host port: " + receivePacket.getPort());
-        System.out.println("Length: " + receivePacket.getLength());
-        System.out.println("Containing: ");
-
-        // Get a reference to the data inside the received datagram.
-        data = receivePacket.getData();
-        for (j=0;j<receivePacket.getLength();j++) {
-            System.out.println("byte " + j + " " + data[j]);
-        }
-        
         // send an ACK after receiving DATA BLOCK 1 0 bytes of data
         
         
@@ -182,7 +150,7 @@ private static String fname;
          // if request is a read, read file in 512 byte chunks from server, and send ACK back
          //to server to acknowledge receiving the packet for each packet received until data size <512
          // then we know that the file has ended.
-      if(s=="R")
+      if(s.equalsIgnoreCase("R"))
       {
     	  int ackcount = 1;
        for(;;)
@@ -190,6 +158,7 @@ private static String fname;
     	  
     	   byte[] data2 = new byte[512];
            receivePacket = new DatagramPacket(data2, data2.length);
+           System.out.println("Waiting for packet");
     	   try {
 			sendReceiveSocket.receive(receivePacket);
 		} catch (IOException e) {
@@ -212,29 +181,36 @@ private static String fname;
            
            //////////////////////////////////////////////////////////
          
-          sendAck(ackcount,receivePacket.getPort());
-    	   /////////////////////////////////////////////////////////////////////
-    	   try {
-    		   
-   			String content = new String(data2);
-    
-   			File file = new File(fname);
-    
-   			// if file doesn't exist, then create it
-   			if (!file.exists()) {
-   				file.createNewFile();
-   			}
-    
-   			FileWriter fw = new FileWriter(file.getAbsoluteFile());
-   			BufferedWriter bw = new BufferedWriter(fw);
-   			bw.write(content);
-   			bw.close();
-    
-   			System.out.println("Done");
-    
-   		} catch (IOException e) {
-   			e.printStackTrace();
-   		}
+           sendAck(ackcount,receivePacket.getPort());
+    	 //  String content = new String(data2);
+   
+		File file = new File("client_files\\" + fname);
+   
+		// if file doesn't exist, then create it
+		/*if (!file.exists()) {
+			file.createNewFile();
+		}*/
+			
+ 			try {
+			OutputStream os = new FileOutputStream(file);
+			
+			try {
+				os.write(data2);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}//end TRY2
+			
+			}//end TRY1
+ 			catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} 
+ 			
+		/*FileWriter fw = new FileWriter(file.getAbsoluteFile());
+		BufferedWriter bw = new BufferedWriter(fw);
+		bw.write(content);
+		bw.close();*/
+   
+		//System.out.println("Done");
     	   if(data2.length<512)
     		   break;
     	   
@@ -243,14 +219,43 @@ private static String fname;
        }
 
       }//end IF
-      else if(s=="W")
+      else if(s.equalsIgnoreCase("W"))
       {
     	  
+          data = new byte[100];
+          receivePacket = new DatagramPacket(data, data.length);
+
+          System.out.println("Client: Waiting for packet.");
+          try {
+             // Block until a datagram is received via sendReceiveSocket.
+             sendReceiveSocket.receive(receivePacket);
+          } catch(IOException e) {
+             e.printStackTrace();
+             System.exit(1);
+          }
+
+          // Process the received datagram.
+          System.out.println("Client: ACK0 received:");
+          System.out.println("From host: " + receivePacket.getAddress());
+          System.out.println("Host port: " + receivePacket.getPort());
+          System.out.println("Length: " + receivePacket.getLength());
+          System.out.println("Containing: ");
+
+          // Get a reference to the data inside the received datagram.
+          data = receivePacket.getData();
+          for (j=0;j<receivePacket.getLength();j++) {
+              System.out.println("byte " + j + " " + data[j]);
+          }
+          
+    	  
     	  int ackcount =1;
-    	  FileInputStream reader = null; 
+    	  InputStream reader = null; 
       	int bytesRead=0;
       	try {
-				 reader = new FileInputStream(fname);
+      		
+      		File file = new File("client_files\\" + fname);
+      		
+			reader = new FileInputStream(file);
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
@@ -352,31 +357,62 @@ private static String fname;
    {
 	 
 	   TFTPClient c = new TFTPClient();
-	   int x = 1;
-	   for(;;)
-	   {
-	   System.out.println("Read or Write? (R/W) ");
+	 //  int x = 1;
+	 //  for(;;)
+	 //  {
+	   
 	   Scanner scan1 = new Scanner(System.in), scan2 = new Scanner(System.in);
 	  
 	  for(;;)
 	  {
+		  System.out.println("Read or Write? (R/W) ");
 	   s = scan1.next();
 	   
 	   if(s.equalsIgnoreCase("R")||s.equalsIgnoreCase("W"))
 		   break;
 	  }
 	  
+	  File file; boolean filexists = false ;
 	   do
 	   {
-		   
+		 
 		   System.out.println("Enter file name");
 		   fname = scan2.next();
 		   
-	   }while(!(fname.endsWith(".txt")));
+		   
+		    //format =fname.endsWith(".txt");
+		  
+		   // if(format)
+		   // {
+		   if(s.equalsIgnoreCase("W"))
+		   {
+		    	file = new File("client_files\\" +fname);
+		    	filexists = file.exists();
+		    	if(!filexists)
+		    	{
+		    		System.out.println("File does not exist, please re-enter");
+		    	}
+		   }
+		   else if(s.equalsIgnoreCase("R"))
+		   {
+			   file = new File("server_files\\" +fname);
+		    	filexists = file.exists();
+		    	if(!filexists)
+		    	{
+		    		System.out.println("File does not exist, please re-enter");
+		    	}
+		   }
+		  //  }
+		 //   else
+		  //  {
+		  //  	System.out.println("Wrong format, please enter with .txt file extension");
+		  //  }
+		    
+	   }while(!filexists);
 	  
-      c.sendAndReceive(x); 
-      x++;
-	   }//end for loop
+      c.sendAndReceive(); 
+     // x++;
+	 //  }//end for loop
    }//end main
 }//end class
 

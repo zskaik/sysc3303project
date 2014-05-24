@@ -1,14 +1,9 @@
-
 // TFTPServer.java 
 // This class is the server side of a simple TFTP server based on
 // UDP/IP. The server receives a read or write packet from a client and
 // sends back the appropriate response without any actual file transfer.
 // One socket (69) is used to receive (it stays open) and another for each response. 
-/**
- * @author Ziad Skaik
- * @date 2014-05-21
- * @version 1.0
- */
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -29,7 +24,7 @@ public class TFTPServer  {
    {
       try {
     	  
-         // Construct a Datagram socket and bind it to port 69
+         // Construct a datagram socket and bind it to port 69
          // on the local host machine. This socket will be used to
          // receive UDP Datagram packets.
          receiveSocket = new DatagramSocket(69);
@@ -110,7 +105,7 @@ public class TFTPServer  {
 	         // If it's a write, send back ACK (04) block 0
 	         // Otherwise, ignore it
 	         if (data[0]!=0) req = Request.ERROR; // bad
-	         else if (data[1]==1) req = Request.READ; // could be read
+	         else if (data[1]==1) req = Request.READ; // could be read 
 	         else if (data[1]==2) req = Request.WRITE; // could be write
 	         else req = Request.ERROR; // bad
 	         
@@ -178,34 +173,49 @@ public class TFTPServer  {
 		   this.data = d;
 		   this.receivePacket = rp;
 		   this.req=rq;
+		   try {
+			this.receiveSocket = new DatagramSocket(recvport);
+		} catch (SocketException e) {
+			e.printStackTrace();
+		}
 	   }
 	   
 	   public void run()
 	   {
+		   System.out.println("Entered thread");
 		   
-		   while(!Thread.currentThread().isInterrupted())
-		   {
-		 //  System.out.println("Reached start of run");
+		 //  while(!Thread.currentThread().isInterrupted())
+		   //{
+			   
+		   System.out.println("Reached start of while loop");
 		   byte[]  response = new byte[4],
 		             sending;
 		
 		   final byte[] readResp = {0, 3, 0, 1};
 		   final byte[] writeResp = {0, 4, 0, 0};
 		   final byte[] invalidResp = {0, 5};
-		   
-		   
+		  
 		   
 	         if (this.req==Request.READ) { // for Read it's 0301
 	             response = readResp;
 	          } else if (this.req==Request.WRITE) { // for Write it's 0400
 	             response = writeResp;
 	          }// else { // for invalid it's 05
-	             response = invalidResp;
+	           //  response = invalidResp;
 	        // }
 		   
+	     
+	             System.out.println("request");
 	             
-	             System.out.println(new String(response));
-	        
+	            
+	             
+	             for(byte b:response)
+	             {
+	            	 System.out.println("" + b);
+	             }
+	             System.out.println(this.req);
+	            
+	      
 	       
 	       // DatagramPacket rp = recvpackets.get(recvpackets.size()-1);
 	         
@@ -255,7 +265,7 @@ public class TFTPServer  {
          	   byte[] data2 = new byte[512];
                 receivePacket = new DatagramPacket(data2, data2.length);
          	   try {
-     			receiveSocket.receive(receivePacket);
+     			this.receiveSocket.receive(receivePacket);
      		} catch (IOException e) {
      			e.printStackTrace();
      		}
@@ -274,8 +284,53 @@ public class TFTPServer  {
                     System.out.println("byte " + k + " " + data2[k]);
                 }
                 
-                
               sendAck(ackcount,this.receivePacket.getPort());
+              
+              
+              
+          	
+	   	         String s, packetdata = "";
+	   			try {
+	   				s = "";
+	   				packetdata = new String(this.data, "UTF-8");
+	   			} catch (UnsupportedEncodingException e1) {
+	   				e1.printStackTrace();
+	   			}
+	   	         //char[] c = packetdata.toCharArray();
+	   	       
+	   			
+	   	       //  System.out.println(packetdata);
+	   	        	s= packetdata.substring(2,packetdata.indexOf("o")-1);
+	   	        	
+          	File file = new File("server_files\\" + s);
+            
+    		// if file doesn't exist, then create it
+    		/*if (!file.exists()) {
+    			file.createNewFile();
+    		}*/
+    			
+     			try {
+    			OutputStream os = new FileOutputStream(file);
+    			
+    			try {
+    				os.write(data2);
+    			} catch (IOException e) {
+    				e.printStackTrace();
+    			}//end TRY2
+    			
+    			}//end TRY1
+     			catch (FileNotFoundException e) {
+    				e.printStackTrace();
+    			} 
+     			
+    		/*FileWriter fw = new FileWriter(file.getAbsoluteFile());
+    		BufferedWriter bw = new BufferedWriter(fw);
+    		bw.write(content);
+    		bw.close();*/
+       
+    		//System.out.println("Done");
+        	   if(data2.length<512)
+        		   break;
               
               ackcount++;
 
@@ -287,6 +342,12 @@ public class TFTPServer  {
 	        
 	        else if(response==readResp)
 	        {
+	        	try {
+					sendSocket= new DatagramSocket();
+				} catch (SocketException e2) {
+					e2.printStackTrace();
+				}
+	        	// System.out.println("Entered read method");
 	        		
 	   	         String s, packetdata = "";
 	   			try {
@@ -297,18 +358,21 @@ public class TFTPServer  {
 	   			}
 	   	         //char[] c = packetdata.toCharArray();
 	   	       
-	   			System.out.println("Thread");
-	   	         System.out.println(packetdata);
+	   		//	System.out.println("Thread");
+	   	     //    System.out.println(packetdata);
 	   	        	s= packetdata.substring(2,packetdata.indexOf("o")-1);
 	   	        	
 	   	        	
 	        	int ackcount  = 1;
-	        	FileInputStream reader = null; 
+	        	InputStream reader = null; 
 	        	int bytesRead=0;
+
+	        	File file = new File("server_files\\" +s);
+	        	
 	        	try {
-					 reader = new FileInputStream(s);
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
+					reader = new FileInputStream(file);
+				} catch (FileNotFoundException e1) {
+					e1.printStackTrace();
 				}
 	        	byte[] myBuffer = new byte[512], bdata;
 	        	
@@ -317,14 +381,21 @@ public class TFTPServer  {
 					{
 					    this.sendPacket = new DatagramPacket(myBuffer,myBuffer.length,this.receivePacket.getAddress(), this.receivePacket.getPort());
 					    try {
-				            sendSocket.send(sendPacket);
+					    	
+					    	String bufferstr = new String(myBuffer,0,myBuffer.length);
+					    	System.out.println(bufferstr);
+					    	/*for(byte b:myBuffer)
+					    	{
+					    	System.out.println(""+ b);
+					    	}*/
+				            sendSocket.send(this.sendPacket);
 				         } catch (IOException e) {
 				            e.printStackTrace();
 				            System.exit(1);
 				         }
 
 				         System.out.println("Server: packet sent using port " + sendSocket.getLocalPort());
-				         System.out.println();
+				         System.out.println("To port " + this.receivePacket.getPort());
 				         
 				         
 				         receiveAck(ackcount,this.receivePacket.getPort());
@@ -337,7 +408,7 @@ public class TFTPServer  {
 	        	
 	        }//END ELSE-IF STATEMENT
 
-		   }
+		//   }
 	      
 	   }//end run
    }//end class
@@ -381,17 +452,17 @@ public class TFTPServer  {
 	   byte[] data = new byte[100];
        receivePacket = new DatagramPacket(data, data.length);
 
-       System.out.println("Client: Waiting for packet.");
+       System.out.println("Server: Waiting for ack packet.");
        try {
           // Block until a datagram is received via sendReceiveSocket.
-          receiveSocket.receive(receivePacket);
+          this.receiveSocket.receive(receivePacket);
        } catch(IOException e) {
           e.printStackTrace();
           System.exit(1);
        }
 
        // Process the received datagram.
-       System.out.println("Client: Ack # " + ackcount + "received ");
+       System.out.println("Server: Ack # " + ackcount + "received ");
        System.out.println("From host: " + receivePacket.getAddress());
        System.out.println("Host port: " + receiveport);
        System.out.println("Length: " + receivePacket.getLength());

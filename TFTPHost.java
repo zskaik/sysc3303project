@@ -1,4 +1,4 @@
-// TFTPHost.java 
+// TFTPSim.java 
 // This class is the beginnings of an error simulator for a simple TFTP server 
 // based on UDP/IP. The simulator receives a read or write packet from a client and
 // passes it on to the server.  Upon receiving a response, it passes it on to the 
@@ -6,11 +6,6 @@
 // One socket (68) is used to receive from the client, and another to send/receive
 // from the server.  A new socket is used for each communication back to the client.   
 
-/**
- * @author Ziad Skaik
- * @date 2014-05-21
- * @version 1.0
- */
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -18,7 +13,7 @@ import java.util.*;
 public class TFTPHost {
    
    // UDP datagram packets and sockets used to send / receive
-   private DatagramPacket sendPacket, sendPacket2, receivePacket, receivePacket2;
+   private DatagramPacket sendPacket, receivePacket;
    private DatagramSocket receiveSocket, sendSocket, sendReceiveSocket;
    private int clientPort =0;
    public TFTPHost()
@@ -27,7 +22,7 @@ public class TFTPHost {
          // Construct a datagram socket and bind it to port 68
          // on the local host machine. This socket will be used to
          // receive UDP Datagram packets from clients.
-         receiveSocket = new DatagramSocket(68);
+         receiveSocket = new DatagramSocket(5000);
          // Construct a datagram socket and bind it to any available
          // port on the local host machine. This socket will be used to
          // send and receive UDP Datagram packets from the server.
@@ -77,12 +72,32 @@ public class TFTPHost {
          String received = new String(data,0,receivePacket.getLength());
          System.out.println(received);
          
-         
-         
-        
+       
           sendPacket = new DatagramPacket(data, receivePacket.getLength(),
-                 receivePacket.getAddress(), 69);
-        new connectionManager(data,sendPacket).start();
+          receivePacket.getAddress(), 69);
+
+	         System.out.println("Simulator: sending packet.");
+	         System.out.println("To Server " + sendPacket.getAddress());
+	         System.out.println("Destination host port: " + sendPacket.getPort());
+	         System.out.println("Length: " + sendPacket.getLength());
+	         System.out.println("Containing: ");
+	        byte[] data1 = sendPacket.getData();
+	         for (int j1=0;j1<sendPacket.getLength();j1++) {
+	             System.out.println("byte " + j1 + " " + data1[j1]);
+	         }
+
+	         // Send the datagram packet to the server via the send/receive socket.
+
+	         try {
+	            sendReceiveSocket.send(sendPacket);
+	         } catch (IOException e) {
+	            e.printStackTrace();
+	            System.exit(1);
+	         }
+	         
+	         System.out.println("Packet sent");
+	         
+        new connectionManager(clientPort).start();
          
          // Now pass it on to the server (to port 69)
          // Construct a datagram packet that is to be sent to a specified port
@@ -131,43 +146,21 @@ public class TFTPHost {
 
    class connectionManager extends Thread
    {
-	   byte[] data;DatagramPacket sendPacket;
-	   public connectionManager (byte[] d, DatagramPacket sp)
-	   {
-		   this.sendPacket= sp;
-	        this.data = d;
-	        
-	   }
+	 int clientPort;
+	   public connectionManager(int cp)
+	  {
+		  this.clientPort=cp;
+	  }
 	   public void run()
 	   {
-
-	         System.out.println("Simulator: sending packet.");
-	         System.out.println("To Client: " + this.sendPacket.getAddress());
-	         System.out.println("Destination host port: " + this.sendPacket.getPort());
-	         System.out.println("Length: " + this.sendPacket.getLength());
-	         System.out.println("Containing: ");
-	         this.data = this.sendPacket.getData();
-	         for (int j=0;j<this.sendPacket.getLength();j++) {
-	             System.out.println("byte " + j + " " + this.data[j]);
-	         }
-
-	         // Send the datagram packet to the server via the send/receive socket.
-
-	         try {
-	            sendReceiveSocket.send(this.sendPacket);
-	         } catch (IOException e) {
-	            e.printStackTrace();
-	            System.exit(1);
-	         }
-	         
+		   
 	         
 	         while(true)
 	         {
 	        	 
-	             
-	        	 passPacketClient(receivePacket(),clientPort);
-	        	 
-	        	 passPacketServer(receivePacket());
+	        	 DatagramPacket p = receivePacket();
+	        	 passPacketClient(p,this.clientPort);
+	        	 passPacketServer(receivePacket(),p.getPort());
 	        	 
 	        	 
 	         }
@@ -222,15 +215,17 @@ public class TFTPHost {
 	         sendSocket.close();
 	   }
    }*/
-   public void passPacketServer(DatagramPacket p)
+   public void passPacketServer(DatagramPacket p, int serverport)
    {
 	   byte[] data = p.getData();
+	   
+	  
 	   
 	   try {
        	
            
                 DatagramPacket sendPacket = new DatagramPacket(data, data.length,
-                                               InetAddress.getLocalHost(), 69);
+                                               InetAddress.getLocalHost(), serverport);
               } catch (UnknownHostException e) {
                  e.printStackTrace();
                  System.exit(1);
@@ -238,7 +233,7 @@ public class TFTPHost {
 
               System.out.println("Host: passing packet to Server ");
               System.out.println("To host: " + sendPacket.getAddress());
-              System.out.println("Destination host port: " + 69);
+              System.out.println("Destination host port: " + serverport);
               System.out.println("Length: " + sendPacket.getLength());
               System.out.println("Containing: ");
               data = sendPacket.getData();
@@ -249,7 +244,7 @@ public class TFTPHost {
               // Send the datagram packet to the server via the send/receive socket.
 
               try {
-                 sendSocket.send(sendPacket);
+                 sendReceiveSocket.send(sendPacket);
               } catch (IOException e) {
                  e.printStackTrace();
                  System.exit(1);
@@ -263,7 +258,7 @@ public class TFTPHost {
    {
 	 byte[] data = p.getData();
        
-	 
+	
 	 try {
 	       	
          
@@ -276,9 +271,10 @@ public class TFTPHost {
 
        // Process the received datagram.
        System.out.println("Host: Passing packet to client: ");
-       System.out.println("From host: " + receivePacket.getAddress());
-       System.out.println("Length: " + receivePacket.getLength());
+       System.out.println("From host: " + p.getAddress());
+       System.out.println("Length: " + p.getLength());
        System.out.println("Containing: ");
+       
        for (int j=0;j<data.length;j++) {
            System.out.println("byte " + j + " " + data[j]);
        }
@@ -287,13 +283,13 @@ public class TFTPHost {
        
 
        try {
-          sendSocket.send(sendPacket);
+          sendReceiveSocket.send(sendPacket);
        } catch (IOException e) {
           e.printStackTrace();
           System.exit(1);
        }
 
-     System.out.println("Client: Packet sent.");
+     System.out.println("Host: Packet sent.");
 
    }
    public DatagramPacket receivePacket()
@@ -303,7 +299,7 @@ public class TFTPHost {
 	   System.out.println("Simulator: Waiting for packet.");
        // Block until a datagram packet is received from receiveSocket.
        try {
-          receiveSocket.receive(receivePacket);
+          sendReceiveSocket.receive(receivePacket);
        } catch (IOException e) {
           e.printStackTrace();
           System.exit(1);
