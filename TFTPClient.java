@@ -155,9 +155,9 @@ private static String fname;
     	  int ackcount = 1;
        for(;;)
        { 
-    	  
+    	  System.out.println("Reached here");
     	   byte[] data2 = new byte[512];
-           receivePacket = new DatagramPacket(data2, data2.length);
+           DatagramPacket receivePacket = new DatagramPacket(data2, data2.length);
            System.out.println("Waiting for packet");
     	   try {
 			sendReceiveSocket.receive(receivePacket);
@@ -176,7 +176,7 @@ private static String fname;
            // Get a reference to the data inside the received datagram.
          
            for (int k=0;k<receivePacket.getLength();k++) {
-               System.out.println("byte " + k + " " + data2[k]);
+             //  System.out.println("byte " + k + " " + data2[k]);
            }
            
            //////////////////////////////////////////////////////////
@@ -216,7 +216,7 @@ private static String fname;
     	   
     	   
     	   ackcount++;
-       }
+       }//end FOR loop
 
       }//end IF
       else if(s.equalsIgnoreCase("W"))
@@ -244,26 +244,39 @@ private static String fname;
           // Get a reference to the data inside the received datagram.
           data = receivePacket.getData();
           for (j=0;j<receivePacket.getLength();j++) {
-              System.out.println("byte " + j + " " + data[j]);
+          //    System.out.println("byte " + j + " " + data[j]);
           }
           
     	  
     	  int ackcount =1;
     	  InputStream reader = null; 
       	int bytesRead=0;
-      	try {
+      	
+      	
       		
-      		File file = new File("client_files\\" + fname);
+      		 File file = new File("client_files\\" + fname);
       		
-			reader = new FileInputStream(file);
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
+      		
+			try {
+				reader = new FileInputStream(file);
+			} catch (FileNotFoundException e1) {
+				e1.printStackTrace();
 			}
-      	byte[] myBuffer = new byte[512], bdata;
+			
+			
+      	byte[] myBuffer = new byte[(int) file.length()], bdata;
       	
       	try {
-				while ((bytesRead = reader.read(myBuffer,0,512)) != -1)
+				do
 				{
+					if(file.length()>=512)
+					bytesRead  = reader.read(myBuffer,0,512);
+					
+					else
+					{
+						bytesRead = reader.read(myBuffer,0,(int) file.length());
+					}
+					
 				    this.sendPacket = new DatagramPacket(myBuffer,myBuffer.length,this.receivePacket.getAddress(), this.receivePacket.getPort());
 				    try {
 			            sendReceiveSocket.send(sendPacket);
@@ -275,14 +288,14 @@ private static String fname;
 			         System.out.println("Client: packet sent using port " + sendReceiveSocket.getLocalPort());
 			         System.out.println();
 			         
-			         receiveAck(ackcount,this.receivePacket.getPort());
-			         ackcount++;
-				}//end while
+			         receiveAck(this.receivePacket.getPort());
+			         
+				}while(bytesRead!=-1);//end while
 			} catch (IOException e) {
 				
 				e.printStackTrace();
 			}
-      }
+      }//END ELSE-IF
    //}// end of loop
 
       // We're finished, so close the socket.
@@ -290,9 +303,11 @@ private static String fname;
    }
    public void sendAck(int ackcount, int sendPort)
    {
+	   byte[]  ack = {0,4,0,(byte)ackcount};
+	   DatagramPacket sendPacket = null;
 	   try {
           	
-	         byte[]  ack = {0,4,0,(byte)ackcount};
+	         
 	               sendPacket = new DatagramPacket(ack, ack.length,
 	                                             InetAddress.getLocalHost(), sendPort);
 	            } catch (UnknownHostException e) {
@@ -323,9 +338,9 @@ private static String fname;
 
 	           ackcount++;
    }
-   public void receiveAck(int ackcount, int receiveport)
+   public void receiveAck( int receiveport)
    {
-	  byte[] data = new byte[100];
+	  byte[] data = new byte[4];
        receivePacket = new DatagramPacket(data, data.length);
 
        System.out.println("Client: Waiting for packet.");
@@ -336,9 +351,9 @@ private static String fname;
           e.printStackTrace();
           System.exit(1);
        }
-
+       	int a  = data[3]&0xFF;
        // Process the received datagram.
-       System.out.println("Client: Ack # " + ackcount + "received ");
+       System.out.println("Client: Ack # " + a + "received ");
        System.out.println("From host: " + receivePacket.getAddress());
        System.out.println("Host port: " + receiveport);
        System.out.println("Length: " + receivePacket.getLength());

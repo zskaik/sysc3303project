@@ -43,7 +43,7 @@ public class TFTPHost {
          data = new byte[100];
          receivePacket = new DatagramPacket(data, data.length);
 
-         System.out.println("Simulator: Waiting for packet.");
+         System.out.println("Simulator: Waiting for request packet.");
          // Block until a datagram packet is received from receiveSocket.
          try {
             receiveSocket.receive(receivePacket);
@@ -257,12 +257,12 @@ public class TFTPHost {
    public void passPacketClient(DatagramPacket p,int cport)
    {
 	 byte[] data = p.getData();
-       
+	// DatagramPacket sendPacket =null;
 	
 	 try {
 	       	
          
-         DatagramPacket sendPacket = new DatagramPacket(data, data.length,
+          sendPacket = new DatagramPacket(data, data.length,
                                         InetAddress.getLocalHost(), cport);
        } catch (UnknownHostException e) {
           e.printStackTrace();
@@ -279,9 +279,6 @@ public class TFTPHost {
            System.out.println("byte " + j + " " + data[j]);
        }
 	   
-       
-       
-
        try {
           sendReceiveSocket.send(sendPacket);
        } catch (IOException e) {
@@ -290,6 +287,8 @@ public class TFTPHost {
        }
 
      System.out.println("Host: Packet sent.");
+     System.out.println("Sent to port: " + cport);
+     
 
    }
    public DatagramPacket receivePacket()
@@ -317,7 +316,7 @@ public class TFTPHost {
        
        // print the bytes
        for (int j=0;j<receivePacket.getLength();j++) {
-          System.out.println("byte " + j + " " + d[j]);
+         // System.out.println("byte " + j + " " + d[j]);
        }
 
        // Form a String from the byte array.

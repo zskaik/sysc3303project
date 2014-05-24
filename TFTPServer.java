@@ -72,7 +72,7 @@ public class TFTPServer  {
 	         receivePacket = new DatagramPacket(data, data.length);
 	         //recvpackets.add(receivePacket);
 
-	         System.out.println("Server: Waiting for packet.");
+	         System.out.println("Server: listening  for requests.");
 	         // Block until a datagram packet is received from receiveSocket.
 	         try {
 	            receiveSocket.receive(receivePacket);
@@ -374,12 +374,20 @@ public class TFTPServer  {
 				} catch (FileNotFoundException e1) {
 					e1.printStackTrace();
 				}
-	        	byte[] myBuffer = new byte[512], bdata;
+	        	byte[] myBuffer = new byte[(int) file.length()], bdata;
 	        	
 	        	try {
-					while ((bytesRead = reader.read(myBuffer,0,512)) != -1)
+					do 
 					{
-					    this.sendPacket = new DatagramPacket(myBuffer,myBuffer.length,this.receivePacket.getAddress(), this.receivePacket.getPort());
+						
+						if(file.length()>=512)
+						bytesRead = reader.read(myBuffer,0,512);
+						
+						else
+						{
+							bytesRead = reader.read(myBuffer,0,(int) file.length());
+						}
+					    this.sendPacket = new DatagramPacket(myBuffer,myBuffer.length,this.receivePacket.getAddress(),this.receivePacket.getPort());
 					    try {
 					    	
 					    	String bufferstr = new String(myBuffer,0,myBuffer.length);
@@ -389,6 +397,8 @@ public class TFTPServer  {
 					    	System.out.println(""+ b);
 					    	}*/
 				            sendSocket.send(this.sendPacket);
+				            
+			
 				         } catch (IOException e) {
 				            e.printStackTrace();
 				            System.exit(1);
@@ -398,9 +408,9 @@ public class TFTPServer  {
 				         System.out.println("To port " + this.receivePacket.getPort());
 				         
 				         
-				         receiveAck(ackcount,this.receivePacket.getPort());
-				         ackcount++;
-					}//end while
+				         receiveAck(this.receivePacket.getPort());
+				         
+					}while(bytesRead!=-1);//end while
 				} catch (IOException e) {
 					
 					e.printStackTrace();
@@ -414,10 +424,12 @@ public class TFTPServer  {
    }//end class
    public void sendAck(int ackcount, int sendport)
    {
+	   DatagramPacket  sendPacket =null;
+	   
 	   try {
        	
            byte[]  ack = {0,4,0,(byte)ackcount};
-                 sendPacket = new DatagramPacket(ack, ack.length,
+               sendPacket = new DatagramPacket(ack, ack.length,
                                                InetAddress.getLocalHost(), sendport);
               } catch (UnknownHostException e) {
                  e.printStackTrace();
@@ -443,16 +455,16 @@ public class TFTPServer  {
                  System.exit(1);
               }
 
-            System.out.println("Client: Packet sent.");
+            System.out.println("Server: ACK Packet sent.");
 
            
    }
-   public void receiveAck(int ackcount, int receiveport)
+   public void receiveAck( int receiveport)
    {
-	   byte[] data = new byte[100];
-       receivePacket = new DatagramPacket(data, data.length);
+	   byte[] data = new byte[4];
+      DatagramPacket receivePacket = new DatagramPacket(data, data.length);
 
-       System.out.println("Server: Waiting for ack packet.");
+       System.out.println("Server: Waiting for ACK packet.");
        try {
           // Block until a datagram is received via sendReceiveSocket.
           this.receiveSocket.receive(receivePacket);
@@ -460,9 +472,9 @@ public class TFTPServer  {
           e.printStackTrace();
           System.exit(1);
        }
-
+int a= data[3]&0xFF;
        // Process the received datagram.
-       System.out.println("Server: Ack # " + ackcount + "received ");
+       System.out.println("Server: ACK # " + a + "received ");
        System.out.println("From host: " + receivePacket.getAddress());
        System.out.println("Host port: " + receiveport);
        System.out.println("Length: " + receivePacket.getLength());
