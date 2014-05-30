@@ -7,7 +7,7 @@
 // from the server.  A new socket is used for each communication back to the client.   
 /**
  * @author Ziad Skaik
- * @since 2014-05-29
+ * @since 2014-05-30
  * @version 2.0
  */
 import java.io.*;
@@ -58,7 +58,7 @@ public class TFTPSim {
    /**
     * 
     * @author Ziad Skaik
-    * @since 2014-05-29
+    * @since 2014-05-30
     * @version 2.0
     * This is the connectionThread class to handle the passing of DATA and ACK packets
     * from Client to Server and vice versa for the duration of the file transfer
@@ -170,7 +170,7 @@ public class TFTPSim {
 	   
    }
    /**
-    * Receives from Server
+    * Receives packet
     * @return the DatagramPacket received
     */
    private DatagramPacket receive()
@@ -204,8 +204,9 @@ public class TFTPSim {
 	   
    }
    /**
-    * Sends the packet to the client
+    * Sends the packet to the specified port
     * @param p the DatagramPacket that is passed 
+    * @param sendPort the port that is being sent to
     */
    private void send(DatagramPacket p,int sendPort)
    {
@@ -238,6 +239,10 @@ public class TFTPSim {
 
    }
 
+   /**
+    * The main thread of execution for the Simulator
+    * @param args
+    */
    public static void main( String args[] )
    {
       TFTPSim s = new TFTPSim();
