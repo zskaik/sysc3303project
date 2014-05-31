@@ -142,7 +142,7 @@ private static DatagramSocket sendSocket;
          
          // Create a response.
        
-         new clientConnectionThread(receivePacket,req,receivePacket.getPort()).start();
+         new clientConnectionThread(receivePacket,req,getSimPort()).start();
          
          
          // Construct a datagram packet that is to be sent to a specified port
@@ -205,6 +205,35 @@ private static DatagramSocket sendSocket;
          */
       } // end of loop
 
+   }
+   /**
+    * This method will acquire the Simulator socket port that will be used for the file transfer
+    * 
+    */
+   private int getSimPort()
+   {
+	   byte[] data = new byte[1];
+	DatagramPacket receivePacket = new DatagramPacket(data,data.length);
+	DatagramSocket socketr=null;
+	try {
+		socketr = new DatagramSocket();
+	} catch (SocketException e1) {
+
+		e1.printStackTrace();
+	}
+	
+	System.out.println("Waiting for Sim port ");
+	
+	try {
+		socketr.receive(receivePacket);
+	} catch (IOException e) {
+		e.printStackTrace();
+		System.err.println("ERROR! Failed to receive the Sim port");
+	}
+	   
+	System.out.println("Packet received, the Error Simulator's thread port is: " + receivePacket.getData()[0]);
+	
+	return receivePacket.getData()[0]&0XFF; // the port we will send to
    }
    
    /**
@@ -464,6 +493,12 @@ private static DatagramSocket sendSocket;
    
 private void senderror (int i ) {
 	   
+	DatagramSocket sendErr=null;
+	try {
+		sendErr = new DatagramSocket();
+	} catch (SocketException e1) {
+		e1.printStackTrace();
+	}
 	   byte[] error = new byte[100], // message we send
 	             erstring; // error string as bytes
 	           error[0]= 0; 
@@ -518,7 +553,7 @@ private void senderror (int i ) {
        System.out.println("Sending error packet with contents  #: " + erstring);
        System.out.println("Sending error packet with contents  #: " + new String (errPacket.getData()));
  	  try {
- 		 sendAndReceiveSocket.send(errPacket);
+ 		 sendErr.send(errPacket);
  	} catch (IOException e) {
  		e.printStackTrace();
  		System.err.println("ERROR! Datagram  packet failed to be sent");
@@ -526,7 +561,43 @@ private void senderror (int i ) {
  	  
  	  System.out.println("Error successfully sent");
     }
-   
+
+/**
+ * The thread to handle any errors we receive from the Client
+ * @author ziadskaik
+ *
+ */
+class ErrorHandler extends Thread
+{ 
+
+	DatagramSocket errSocket=null;DatagramPacket errPacket=null;
+	public ErrorHandler()
+	{
+		byte[] data = new byte[200];
+		try {
+
+			errSocket = new DatagramSocket(9000);
+		} catch (SocketException e) {
+			e.printStackTrace();
+			System.err.println("ERROR! Failed to create Error Socket.");
+		}
+		try {
+			errPacket = new DatagramPacket(data,data.length,InetAddress.getLocalHost(),sendPort);
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			System.err.println("ERROR! Failed to create Error Packet.");
+		}
+	}
+	public void run()
+	{
+		try {
+			errSocket.receive(errPacket);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("ERROR! Failed to receive Error Packet.");
+		}
+	}
+}
    }// end clientConnectionThread class
 
    /**

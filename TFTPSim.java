@@ -18,19 +18,11 @@ public class TFTPSim {
    
    // UDP datagram packets and sockets used to send / receive
    private DatagramPacket sendPacket, receivePacket;
-   private DatagramSocket  sendReceiveSocket;
-   private int sendPort;// the port to send to
+   private DatagramSocket reqSocket;
+   private int clientPort;// the port to send to
    public TFTPSim()
    {
-      try {
-         // Construct a datagram socket and bind it to port 70
-         // on the local host machine. 
-         // This socket will be used to send and receive UDP Datagram packets to/from the server.
-         sendReceiveSocket = new DatagramSocket(70);
-      } catch (SocketException se) {
-         se.printStackTrace();
-         System.exit(1);
-      }
+   
       	 new Thread(){
       		
       		public void run()
@@ -52,8 +44,149 @@ public class TFTPSim {
 	      		}
       		}
       	}.start();
-        new connectionThread().start();	//spawn a new connection thread to start passing packets 
+      	
+      	//listening for requests
+      	int port = 70;
+      	for(;;)
+      	{
+      	handleRequest(); // handle the initial request ( i.e send to Server)
+      	DatagramSocket ftsocket = null;
+        try {
+	         // Construct a datagram socket and bind it to port 70
+	         // on the local host machine. 
+	         // This socket will be used to send and receive UDP Datagram packets to/from the server.
+	       ftsocket = new DatagramSocket(port);
+	      } catch (SocketException se) {
+	         se.printStackTrace();
+	         System.exit(1);
+	      }
+      	sendPort(port); // send the thread's port to the client
+        new connectionThread(ftsocket).start();	//spawn a new connection thread to start passing packets
+        port++;
         
+      	}
+        
+   }
+   /**
+    * identify this thread's socket to the Client and Server
+    */
+   private void sendPort(int port)
+   {
+	   DatagramSocket sSocket = null;
+	   try {
+		sSocket = new DatagramSocket();
+	} catch (SocketException e) {
+
+		e.printStackTrace();
+	}
+	   byte[] data = new byte[1];
+	   data[0] =(byte)port;
+	   DatagramPacket sendPacket = null;
+	try {
+		sendPacket = new DatagramPacket(data,data.length,InetAddress.getLocalHost(),clientPort);
+	} catch (UnknownHostException e1) {
+		e1.printStackTrace();
+	}
+	   System.out.println("Sending the Error Simulator's thread port to the Client");
+	   try {
+		sSocket.send(sendPacket);
+	} catch (IOException e) {
+		e.printStackTrace();System.err.println("ERROR. Failed to send identification port");
+	}
+	   System.out.println("Sent port #:" + port + " to the Client ");
+	   
+	   
+	   try {
+			sendPacket = new DatagramPacket(data,data.length,InetAddress.getLocalHost(),69);
+		} catch (UnknownHostException e1) {
+			e1.printStackTrace();
+		}
+	   
+	   System.out.println("Sending the Error Simulator's thread port to the Server");
+	   try {
+		sSocket.send(sendPacket);
+	} catch (IOException e) {
+		e.printStackTrace();System.err.println("ERROR. Failed to send identification port");
+	}
+	   System.out.println("Sent port #:" + port + " to the Server ");
+   }
+   /**
+    * Handles the intial request
+    */
+   private void handleRequest()
+   {
+
+	      byte[] data, sending;
+	     
+
+	         data = new byte[516];
+	         DatagramPacket receivePacket = new DatagramPacket(data, data.length);
+
+	         System.out.println("Simulator: Waiting for packet.");
+	         // Block until a datagram packet is received from receiveSocket.
+	         try {
+	            reqSocket.receive(receivePacket);
+	         } catch (IOException e) {
+	            e.printStackTrace();
+	            System.exit(1);
+	         }
+
+	         // Process the received datagram.
+	         System.out.println("\nSimulator: Request Packet received:");
+	         System.out.println("From host: " + receivePacket.getAddress());
+	         clientPort = receivePacket.getPort();
+	         System.out.println("Host port: " + clientPort);
+	         System.out.println("Length: " + receivePacket.getLength());
+	         System.out.println("Containing: " );
+
+	         // Get a reference to the data inside the received datagram.
+	         data = receivePacket.getData();
+	         
+	         // print the bytes
+	         for (byte b:data) 
+	         System.out.print(b+" ");
+	         
+
+	         // Form a String from the byte array.
+	         String received = new String(data,0,receivePacket.getLength());
+	         System.out.println(received);
+	         
+	         // Now pass it on to the server (to port 69)
+	         // Construct a datagram packet that is to be sent to a specified port
+	         // on a specified host.
+	         // The arguments are:
+	         //  msg - the message contained in the packet (the byte array)
+	         //  the length we care about - k+1
+	         //  InetAddress.getLocalHost() - the Internet address of the
+	         //     destination host.
+	         //     In this example, we want the destination to be the same as
+	         //     the source (i.e., we want to run the client and server on the
+	         //     same computer). InetAddress.getLocalHost() returns the Internet
+	         //     address of the local host.
+	         //  69 - the destination port number on the destination host.
+
+	         sendPacket = new DatagramPacket(data, receivePacket.getLength(),
+	                                        receivePacket.getAddress(), 69);
+	        
+	         System.out.println("\nSimulator: sending packet.");
+	         System.out.println("To host: " + sendPacket.getAddress());
+	         System.out.println("Destination host port: " + sendPacket.getPort());
+	         System.out.println("Length: " + sendPacket.getLength());
+	         System.out.println("Containing: ");
+	         data = sendPacket.getData();
+	         for (byte b:data) 
+	         System.out.print(b + " ");
+	         
+
+	         // Send the datagram packet to the server via the send/receive socket.
+
+	         try {
+	            reqSocket.send(sendPacket);
+	         } catch (IOException e) {
+	            e.printStackTrace();
+	            System.exit(1);
+	         }
+	   
    }
    /**
     * 
@@ -64,85 +197,15 @@ public class TFTPSim {
     * from Client to Server and vice versa for the duration of the file transfer
     */
    class connectionThread extends Thread
-   {
-	   public connectionThread()
+   {  
+	   DatagramSocket ftsocket;
+	   public connectionThread(DatagramSocket ftsocket)
 	   {
-		   //
+		 
 	   }
 	   public void run()
 	   {
 
-		      byte[] data, sending;
-		      
-		      int clientPort, j=0;
-
-		         data = new byte[516];
-		         DatagramPacket receivePacket = new DatagramPacket(data, data.length);
-
-		         System.out.println("Simulator: Waiting for packet.");
-		         // Block until a datagram packet is received from receiveSocket.
-		         try {
-		            sendReceiveSocket.receive(receivePacket);
-		         } catch (IOException e) {
-		            e.printStackTrace();
-		            System.exit(1);
-		         }
-
-		         // Process the received datagram.
-		         System.out.println("\nSimulator: Request Packet received:");
-		         System.out.println("From host: " + receivePacket.getAddress());
-		         clientPort = receivePacket.getPort();
-		         System.out.println("Host port: " + clientPort);
-		         System.out.println("Length: " + receivePacket.getLength());
-		         System.out.println("Containing: " );
-
-		         // Get a reference to the data inside the received datagram.
-		         data = receivePacket.getData();
-		         
-		         // print the bytes
-		         for (byte b:data) 
-		         System.out.print(b+" ");
-		         
-
-		         // Form a String from the byte array.
-		         String received = new String(data,0,receivePacket.getLength());
-		         System.out.println(received);
-		         
-		         // Now pass it on to the server (to port 69)
-		         // Construct a datagram packet that is to be sent to a specified port
-		         // on a specified host.
-		         // The arguments are:
-		         //  msg - the message contained in the packet (the byte array)
-		         //  the length we care about - k+1
-		         //  InetAddress.getLocalHost() - the Internet address of the
-		         //     destination host.
-		         //     In this example, we want the destination to be the same as
-		         //     the source (i.e., we want to run the client and server on the
-		         //     same computer). InetAddress.getLocalHost() returns the Internet
-		         //     address of the local host.
-		         //  69 - the destination port number on the destination host.
-
-		         sendPacket = new DatagramPacket(data, receivePacket.getLength(),
-		                                        receivePacket.getAddress(), 69);
-		        
-		         System.out.println("\nSimulator: sending packet.");
-		         System.out.println("To host: " + sendPacket.getAddress());
-		         System.out.println("Destination host port: " + sendPacket.getPort());
-		         System.out.println("Length: " + sendPacket.getLength());
-		         System.out.println("Containing: ");
-		         data = sendPacket.getData();
-		         for (byte b:data) 
-		         System.out.print(b + " ");
-		         
-
-		         // Send the datagram packet to the server via the send/receive socket.
-
-		         try {
-		            sendReceiveSocket.send(sendPacket);
-		         } catch (IOException e) {
-		            e.printStackTrace();
-		            System.exit(1);
-		         }
 		         
 		         // The Algorithm for forwarding packets
 		         
@@ -168,7 +231,8 @@ public class TFTPSim {
 		     }// end for loop
 	   }
 	   
-   }
+   
+  
    /**
     * Receives packet
     * @return the DatagramPacket received
@@ -182,7 +246,7 @@ public class TFTPSim {
        System.out.println("\nSimulator: Waiting for packet.");
        try {
           // Block until a datagram is received via sendReceiveSocket.
-          sendReceiveSocket.receive(receivePacket);
+          ftsocket.receive(receivePacket);
        } catch(IOException e) {
           e.printStackTrace();
           System.exit(1);
@@ -228,17 +292,20 @@ public class TFTPSim {
 
 
        try {
-          sendReceiveSocket.send(sendPacket);
+          ftsocket.send(sendPacket);
        } catch (IOException e) {
           e.printStackTrace();
           System.exit(1);
        }
 
-       System.out.println("\nSimulator: packet sent using port: " + sendReceiveSocket.getLocalPort());
+       System.out.println("\nSimulator: packet sent using port: " + ftsocket.getLocalPort());
        System.out.println();
 
    }
-
+   
+   
+   
+   }//end connectionThread class
    /**
     * The main thread of execution for the Simulator
     * @param args

@@ -25,8 +25,8 @@ private static DatagramPacket errPacket;
 private static DatagramSocket ftSocket;
    private static String s;
    private static String fname;
-   private static int sendPort;
-   private static int errorno; 
+   private static int simlistenerport, sendPort;
+   private static int errorno;
 
    // we can run in normal (send directly to server) or test
    // (send to simulator) mode
@@ -70,9 +70,9 @@ private static DatagramSocket ftSocket;
       Mode run = Mode.TEST; // change to NORMAL to send directly to server
       
       if (run==Mode.NORMAL) 
-         sendPort = 69;	  // If this is selected, all communication will be with the Error Simulator.
+         simlistenerport = 69;	  // If this is selected, all communication will be with the Error Simulator.
       else
-         sendPort = 70;   // If this is selected, all communication will be with the Error Simulator.
+         simlistenerport = 70;   // If this is selected, all communication will be with the Error Simulator.
       
          System.out.println("Client: creating packet request.");
          
@@ -124,7 +124,7 @@ private static DatagramSocket ftSocket;
         //  69 - the destination port number on the destination host.
         try {
            sendPacket = new DatagramPacket(msg, len,
-                                         InetAddress.getLocalHost(), sendPort);
+                                         InetAddress.getLocalHost(), simlistenerport);
         } catch (UnknownHostException e) {
            e.printStackTrace();
            System.exit(1);
@@ -157,6 +157,8 @@ private static DatagramSocket ftSocket;
        
         // We have sent the file transfer request to the Server, so we close the Socket.
        sendSocket.close(); 
+       
+       	getSimPort();
         //If the String which the user entered matches the letter "R" or "r" indicating a read request
         // we will invoke the method read(sendPort) which will initiate the reading process on the client end.
         if(s.equalsIgnoreCase("R"))
@@ -166,6 +168,42 @@ private static DatagramSocket ftSocket;
         // we will invoke the method write(sendPort) which will initiate the writing process on the client end.
         else if(s.equalsIgnoreCase("W"))
         	write();
+   }
+   /**
+    * The thread to handle any errors we receive from the Server
+    * @author ziadskaik
+    *
+    */
+   class ErrorHandler extends Thread
+   { 
+
+   	DatagramSocket errSocket=null;DatagramPacket errPacket=null;
+   	public ErrorHandler()
+   	{
+   		byte[] data = new byte[200];
+   		try {
+
+   			errSocket = new DatagramSocket(9000);
+   		} catch (SocketException e) {
+   			e.printStackTrace();
+   			System.err.println("ERROR! Failed to create Error Socket.");
+   		}
+   		try {
+			errPacket = new DatagramPacket(data,data.length,InetAddress.getLocalHost(),sendPort);
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			System.err.println("ERROR! Failed to create Error Packet.");
+		}
+   	}
+   	public void run()
+   	{
+   		try {
+			errSocket.receive(errPacket);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("ERROR! Failed to receive Error Packet.");
+		}
+   	}
    }
    /**
     * This method will be responsible for reading the file from the Server
@@ -287,7 +325,7 @@ private static DatagramSocket ftSocket;
 	  byte[] data = {0,4,0,ackCount};
 	  DatagramPacket sendPacket = null;
 	  try {
-		 sendPacket = new DatagramPacket(data,data.length,InetAddress.getLocalHost(),sendPort);
+		 sendPacket = new DatagramPacket(data,data.length,InetAddress.getLocalHost(),simlistenerport);
 	} catch (UnknownHostException e) {
 		e.printStackTrace();
 		System.err.println("ERROR! DatagramPacket failed to be created and initialized");
@@ -362,7 +400,7 @@ private static DatagramSocket ftSocket;
        
        try {
            errPacket = new DatagramPacket(error, error.length,
-                                         InetAddress.getLocalHost(), sendPort);
+                                         InetAddress.getLocalHost(), simlistenerport);
         } catch (UnknownHostException e) {
            e.printStackTrace();
            System.exit(1);
@@ -379,6 +417,28 @@ private static DatagramSocket ftSocket;
  	  
  	  System.out.println("Error successfully sent");
     }
+   /**
+    * This method will acquire the Simulator socket port that will be used for the file transfer
+    * 
+    */
+   private void getSimPort()
+   {
+	   byte[] data = new byte[1];
+	DatagramPacket receivePacket = new DatagramPacket(data,data.length);
+	
+	System.out.println("Waiting for Sim port ");
+	
+	try {
+		ftSocket.receive(receivePacket);
+	} catch (IOException e) {
+		e.printStackTrace();
+		System.err.println("ERROR! Failed to receive the Sim port");
+	}
+	   
+	System.out.println("Packet received, the Error Simulator's thread port is: " + receivePacket.getData()[0]);
+	
+	sendPort = receivePacket.getData()[0]; // the port we will send to
+   }
    
    /**
     * The main thread of execution for this program
