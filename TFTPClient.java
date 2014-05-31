@@ -12,21 +12,19 @@ import java.util.*;
  * @since 2014-05-30
  * @version 2.0
  */
-/**
- * @author prasanthpillai
- *
- */
 public class TFTPClient
 {
 
    private DatagramPacket sendPacket, receivePacket;
-private static DatagramPacket errPacket;
-   private DatagramSocket sendSocket; // sendSocket-> Sends requests to Error Simulator, ftSocket-> Handles file transfer
-private static DatagramSocket ftSocket;
+   private DatagramSocket sendSocket, ftSocket; // sendSocket-> Sends requests to Error Simulator, ftSocket-> Handles file transfer
    private static String s;
    private static String fname;
+<<<<<<< HEAD
    private static int simlistenerport, sendPort;
    private static int errorno;
+=======
+   private int sendPort;
+>>>>>>> parent of 2ab871d... added method for sending error packets , issue with receviing packets at
 
    // we can run in normal (send directly to server) or test
    // (send to simulator) mode
@@ -350,6 +348,7 @@ private static DatagramSocket ftSocket;
    {
 	   return null;
    }
+<<<<<<< HEAD
    
    // method used to send error packet, sends specific error packet based on error code passed in   
    
@@ -440,6 +439,8 @@ private static DatagramSocket ftSocket;
 	sendPort = receivePacket.getData()[0]; // the port we will send to
    }
    
+=======
+>>>>>>> parent of 2ab871d... added method for sending error packets , issue with receviing packets at
    /**
     * The main thread of execution for this program
     * This thread will create and initialize a new TFTPClient Object,
@@ -475,12 +476,10 @@ private static DatagramSocket ftSocket;
 		   if(s.equalsIgnoreCase("W"))
 		   {
 		    	file = new File("client_files\\" +fname);
-		    	filexists = file.isFile();
+		    	filexists = file.exists();
 		    	// If the file name entered by the user doesn't exist
 		    	if(!filexists)
 		    	{
-		    		errorno = 1;
-		    		senderror(errorno);  
 		    		System.err.println("File does not exist, please re-enter the file name");
 		    	}
 		   }

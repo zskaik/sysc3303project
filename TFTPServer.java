@@ -22,13 +22,10 @@ public class TFTPServer {
    public static final byte[] readResp = {0, 3, 0, 1};
    public static final byte[] writeResp = {0, 4, 0, 0};
    public static final byte[] invalidResp = {0, 5};
-   private static int errorno;
   
    // UDP datagram packets and sockets used to send / receive
    private DatagramPacket sendPacket, receivePacket;
-public DatagramPacket errPacket;
-   private DatagramSocket receiveSocket;
-private static DatagramSocket sendSocket;
+   private DatagramSocket receiveSocket, sendSocket;
    
    public TFTPServer()
    {
@@ -301,7 +298,7 @@ private static DatagramSocket sendSocket;
   	        		{
 	  	        		 	InputStream reader = null;
 	  	        			File file = new File("server_files\\" +s);
-	                    if(file.isFile())  	  	        	
+	                    if(file.exists())  	  	        	
 	  	  	        	try {
 	  	  					reader = new FileInputStream(file);
 	  	  				} catch (FileNotFoundException e1) {
@@ -310,8 +307,6 @@ private static DatagramSocket sendSocket;
 	                    else
 	                    {
 	                    	System.err.println("ERROR! File does not exist on the server side.\nRead request cannot proceed");
-	                    	errorno=1;
-	                    	senderror(errorno);
 	                    	System.exit(1); // Terminate the program as the file does not exist
 	                    }
 	  	  	        	//Create a new ArrayList of Bytes to store our data
@@ -490,6 +485,7 @@ private static DatagramSocket sendSocket;
 	   return data;
    }
    
+<<<<<<< HEAD
    
 private void senderror (int i ) {
 	   
@@ -598,6 +594,8 @@ class ErrorHandler extends Thread
 		}
 	}
 }
+=======
+>>>>>>> parent of 2ab871d... added method for sending error packets , issue with receviing packets at
    }// end clientConnectionThread class
 
    /**
