@@ -11,7 +11,7 @@ import java.util.*;
 /**
  * 
  * @author Ziad Skaik
- * @since 2014-05-29s
+ * @since 2014-05-30
  * @version 2.0
  */
 public class TFTPServer {
@@ -101,7 +101,7 @@ public class TFTPServer {
          for (byte b:data) {
             System.out.print(b + " ");
          }
-
+         
          // Form a String from the byte array.
          String received = new String(data,0,receivePacket.getLength());
          System.out.println(received);
@@ -207,7 +207,7 @@ public class TFTPServer {
    /**
     * 
     * @author Ziad Skaik
-    * @since 2014-05-29
+    * @since 2014-05-30
     * @version 2.0
     *
     *This is the clientConnectionThread class which will be spawned by the Server listener as soon as 
@@ -251,7 +251,7 @@ public class TFTPServer {
 	  				e1.printStackTrace();
 	  			}
 	  	        //get the file name and store in String s
-	  	        s= packetdata.substring(2,packetdata.indexOf("o")-1);
+	  	        s= packetdata.substring(2,packetdata.lastIndexOf("o")-1);
 			     	        	
 	   }
 	   /**
@@ -298,19 +298,20 @@ public class TFTPServer {
 								// add the opcode to the ArrayList
 								bl=new ArrayList<Byte>();
 								int i;
-								for(i=0;i<dataop.length;i++)
-								bl.add(i,dataop[i]);
+								for(byte b:dataop)
+								bl.add(b);
 								
-								//add the rest of the file contents ( data array) to the the ArrayList
-								int j;
-								for(j=i;j<data.length;j++)
-								bl.add(data[j]);
+								//add the rest of the file contents (data array) to the the ArrayList
+								for(byte b:data)
+								bl.add(b);
 								
 								// this is an array of Bytes not bytes as
 								// as the toArray method does not work with just bytes
 								// the size is 512 to reflect a 4 byte opcode + 512 bytes of file data = 516 bytes
 								Byte[] arr = bl.toArray(new Byte[516]);
-								
+								/*System.out.println("Printing the data before sending, the size of the Byte array is: " + arr.length + "Bytes");
+								for(Byte B:arr)
+									System.out.print(" " + B);*/
 								//Now send the contents to the Error Simulator/Client depending on mode of operation
 								sendDataPacket(arr);
 								
@@ -322,7 +323,13 @@ public class TFTPServer {
 						} catch (IOException e) {
 							
 							e.printStackTrace();
-							System.err.println("Failed to complete read request");
+							System.err.println("Failed to complete read request.");
+						}
+	  	  	        	try {
+							reader.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+							System.err.println("Failed to close the input stream.");
 						}
 	  	  	        	System.out.println("File has been successully transferred.");
 	  	  	        	this.sendAndReceiveSocket.close();
@@ -361,7 +368,7 @@ public class TFTPServer {
 			e.printStackTrace();
 		}
 		// print the packet data contents to be sent.
-		   System.out.println("Sending packet to port : "+ this.sendPort+ " Containing: ");
+		   System.out.println("\nSending packet to port : "+ this.sendPort+ " Containing: ");
 		   for(byte b:data)
 		   System.out.print(b + " ");
 		   // send the packet to the specified port

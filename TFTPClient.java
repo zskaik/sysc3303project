@@ -160,14 +160,19 @@ public class TFTPClient
         else if(s.equalsIgnoreCase("W"))
         	write();
    }
+   /**
+    * This method will be responsible for reading the file from the Server
+    */
    private void read()
    {
+	   
 	   OutputStream os= null;
+	   byte[] data, data_noopcode;
      for(;;)
      { 	 
     	 // receive the data packet with the opcode included and store in byte array "data"
-    	 // create another byte array and initialize it to the same array, discarding the opcode
-    	 byte[] data = receiveDataPacket(), data_noopcode= Arrays.copyOfRange(data, 4, data.length-1);
+    	 // initialize the data_noopcode array to the same array as data, discarding the opcode
+    	 data = receiveDataPacket();data_noopcode = Arrays.copyOfRange(data, 4, data.length-1);
     	 sendAck(data[3]++);
     	 File file = new File("client_files\\" +fname);
     	 
@@ -177,13 +182,15 @@ public class TFTPClient
 			e.printStackTrace();
 			System.err.println("ERROR! Failed to initialize OutputSteam Object");
 		}
+    	 //write to the OutputStream
     	try {
 			os.write(data_noopcode,0, data_noopcode.length);
 			
 		} catch (IOException e) {
 			e.printStackTrace();
+			System.err.println("Failed to write to the OutputStream");
 		}
-  	   if(data.length<512)
+  	   if(data_noopcode.length<512)
   		  break;
   	   
   	

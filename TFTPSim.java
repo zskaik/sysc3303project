@@ -234,7 +234,7 @@ public class TFTPSim {
           System.exit(1);
        }
 
-       System.out.println("\nSimulator: packet sent using port " + sendReceiveSocket.getPort());
+       System.out.println("\nSimulator: packet sent using port: " + sendReceiveSocket.getLocalPort());
        System.out.println();
 
    }
