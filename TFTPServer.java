@@ -22,10 +22,13 @@ public class TFTPServer {
    public static final byte[] readResp = {0, 3, 0, 1};
    public static final byte[] writeResp = {0, 4, 0, 0};
    public static final byte[] invalidResp = {0, 5};
+   private static int errorno;
   
    // UDP datagram packets and sockets used to send / receive
    private DatagramPacket sendPacket, receivePacket;
-   private DatagramSocket receiveSocket, sendSocket;
+public DatagramPacket errPacket;
+   private DatagramSocket receiveSocket;
+private static DatagramSocket sendSocket;
    
    public TFTPServer()
    {
@@ -269,7 +272,7 @@ public class TFTPServer {
   	        		{
 	  	        		 	InputStream reader = null;
 	  	        			File file = new File("server_files\\" +s);
-	                    if(file.exists())  	  	        	
+	                    if(file.isFile())  	  	        	
 	  	  	        	try {
 	  	  					reader = new FileInputStream(file);
 	  	  				} catch (FileNotFoundException e1) {
@@ -278,6 +281,8 @@ public class TFTPServer {
 	                    else
 	                    {
 	                    	System.err.println("ERROR! File does not exist on the server side.\nRead request cannot proceed");
+	                    	errorno=1;
+	                    	senderror(errorno);
 	                    	System.exit(1); // Terminate the program as the file does not exist
 	                    }
 	  	  	        	//Create a new ArrayList of Bytes to store our data
@@ -455,6 +460,72 @@ public class TFTPServer {
 		
 	   return data;
    }
+   
+   
+private void senderror (int i ) {
+	   
+	   byte[] error = new byte[100], // message we send
+	             erstring; // error string as bytes
+	           error[0]= 0; 
+	        	error[1]=5; 
+	        	error [2]=0;
+	        	String x = null;
+	   switch (i) {
+       case 0:  
+    	   error [3] =0;
+                break;
+       case 1:  
+    	   error [3] =1;
+    	   
+    	    x = "FILE NOT FOUND error";
+    	      		
+                break;
+       case 2:  
+    	   error [3] =2;
+                break;
+       case 3:  
+    	   error [3] =3;
+                break;
+       case 4:  
+    	   error [3] =4;
+                break;
+       case 5:  
+    	   error [3] =5;
+                break;
+       case 6:  
+    	   error [3] =6;
+                break;
+     
+	default: 
+                break;   
+	   }
+	   
+	   erstring = x.getBytes();
+	   
+	   System.arraycopy(erstring,0,error,3,erstring.length);
+       
+       // now add a 0 byte
+       error[erstring.length+4] = 0;
+       
+       try {
+           errPacket = new DatagramPacket(error, error.length,
+                                         InetAddress.getLocalHost(), sendPort);
+        } catch (UnknownHostException e) {
+           e.printStackTrace();
+           System.exit(1);
+        }
+       
+       System.out.println("Sending error packet with contents  #: " + erstring);
+       System.out.println("Sending error packet with contents  #: " + new String (errPacket.getData()));
+ 	  try {
+ 		 sendAndReceiveSocket.send(errPacket);
+ 	} catch (IOException e) {
+ 		e.printStackTrace();
+ 		System.err.println("ERROR! Datagram  packet failed to be sent");
+ 	}
+ 	  
+ 	  System.out.println("Error successfully sent");
+    }
    
    }// end clientConnectionThread class
 

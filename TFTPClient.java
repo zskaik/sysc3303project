@@ -12,14 +12,21 @@ import java.util.*;
  * @since 2014-05-30
  * @version 2.0
  */
+/**
+ * @author prasanthpillai
+ *
+ */
 public class TFTPClient
 {
 
    private DatagramPacket sendPacket, receivePacket;
-   private DatagramSocket sendSocket, ftSocket; // sendSocket-> Sends requests to Error Simulator, ftSocket-> Handles file transfer
+private static DatagramPacket errPacket;
+   private DatagramSocket sendSocket; // sendSocket-> Sends requests to Error Simulator, ftSocket-> Handles file transfer
+private static DatagramSocket ftSocket;
    private static String s;
    private static String fname;
-   private int sendPort;
+   private static int sendPort;
+   private static int errorno; 
 
    // we can run in normal (send directly to server) or test
    // (send to simulator) mode
@@ -305,6 +312,74 @@ public class TFTPClient
    {
 	   return null;
    }
+   
+   // method used to send error packet, sends specific error packet based on error code passed in   
+   
+   private static void senderror (int i ) {
+	   
+	   byte[] error = new byte[100], // message we send
+	             erstring; // error string as bytes
+	           error[0]= 0; 
+	        	error[1]=5; 
+	        	error [2]=0;
+	        	String x = null;
+	   switch (i) {
+       case 0:  
+    	   error [3] =0;
+                break;
+       case 1:  
+    	   error [3] =1;
+    	   
+    	    x = "FILE NOT FOUND error";
+    	      		
+                break;
+       case 2:  
+    	   error [3] =2;
+                break;
+       case 3:  
+    	   error [3] =3;
+                break;
+       case 4:  
+    	   error [3] =4;
+                break;
+       case 5:  
+    	   error [3] =5;
+                break;
+       case 6:  
+    	   error [3] =6;
+                break;
+     
+	default: 
+                break;   
+	   }
+	   
+	   erstring = x.getBytes();
+	   
+	   System.arraycopy(erstring,0,error,3,erstring.length);
+       
+       // now add a 0 byte
+       error[erstring.length+4] = 0;
+       
+       try {
+           errPacket = new DatagramPacket(error, error.length,
+                                         InetAddress.getLocalHost(), sendPort);
+        } catch (UnknownHostException e) {
+           e.printStackTrace();
+           System.exit(1);
+        }
+       
+       System.out.println("Sending error packet with error  #: " + x);
+       System.out.println("Sending error packet with contents  #: " + erstring);
+ 	  try {
+ 		ftSocket.send(errPacket);
+ 	} catch (IOException e) {
+ 		e.printStackTrace();
+ 		System.err.println("ERROR! Datagram  packet failed to be sent");
+ 	}
+ 	  
+ 	  System.out.println("Error successfully sent");
+    }
+   
    /**
     * The main thread of execution for this program
     * This thread will create and initialize a new TFTPClient Object,
@@ -340,10 +415,12 @@ public class TFTPClient
 		   if(s.equalsIgnoreCase("W"))
 		   {
 		    	file = new File("client_files\\" +fname);
-		    	filexists = file.exists();
+		    	filexists = file.isFile();
 		    	// If the file name entered by the user doesn't exist
 		    	if(!filexists)
 		    	{
+		    		errorno = 1;
+		    		senderror(errorno);  
 		    		System.err.println("File does not exist, please re-enter the file name");
 		    	}
 		   }
